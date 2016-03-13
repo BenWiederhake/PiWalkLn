@@ -135,11 +135,11 @@ def gen_boxed_img_from_raw(seq, scale=80):
 
 
 def save_pi_img(n=3000, angle=None, name=None):
-    img = gen_boxed_img_from(gen_walk_from_raw(take(n, gen_pi()), angle=angle))
+    img = gen_boxed_img_from_raw(gen_walk_from_raw(take(n, gen_pi()), angle=angle))
     # Note that images will (often enough) be bitwise identical if run with the
     # same parameters, so overwriting is okay.
     name = name if name != None else \
-        "pi_a%1.5f_n%07d.png" % \
+        "samples/pi_a%1.5f_n%07d.png" % \
         (angle if angle != None else walk_default_angle, n)
     fp = open(name, "w")
     img.save(fp, "png")
@@ -148,14 +148,14 @@ def save_pi_img(n=3000, angle=None, name=None):
 
 
 def save_samples():
-    [PiWalkLn.save_pi_img(n, angle * math.pi if angle != None else None) \
+    [save_pi_img(n, angle * pi if angle != None else None) \
         for angle in [1.0/10, 1.0/6, 1.0/5, 1.0/3, 1.0/2, 2.0/3, None, 179/180.0] \
         for n in [10, 30, 100, 300, 1000, 3000]]
     print "Done saving your samples :)"
 
 
 def save_samples_expensive():
-    [PiWalkLn.save_pi_img(10000, angle * math.pi if angle != None else None) \
+    [save_pi_img(10000, angle * pi if angle != None else None) \
         for angle in [1.0/10, 1.0/6, 1.0/5, 1.0/3, 1.0/2, 2.0/3, None, 179/180.0]]
     print "Done saving your expensive samples :)"
 
@@ -168,4 +168,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main(argv)
+    main()
