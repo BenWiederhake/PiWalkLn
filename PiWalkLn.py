@@ -70,17 +70,18 @@ def compress_seq(seq):
         yield compress(x,y)
 
 
-def intermediate_color(phase):
+def intermediate_color(phase, alpha=None):
+    alpha = alpha if alpha != None else 128
     if phase < .5:
         phase = phase * 2
         # 0.0 -> (255, 0, 0)
         # 0.5 -> (0, 255, 0)
-        return tuple(map(int, (255 - 255*phase, 255*phase, 0)))
+        return tuple(map(int, (255 - 255*phase, 255*phase, 0, alpha)))
     else:
         phase = (phase - 0.5) * 2
         # 0.0 -> (0, 255, 0)
         # 0.5 -> (0, 0, 255)
-        return tuple(map(int, (0, 255 - 255*phase, 255*phase)))
+        return tuple(map(int, (0, 255 - 255*phase, 255*phase, alpha)))
 
 
 # 7 turns out to be a good guess for compressed sequences
@@ -90,28 +91,31 @@ def gen_img(scale=80, max_x=7, max_y=7):
     scale: scale up the input by this factor"""
     img = Image.new("RGB", (max_x * scale * 2, max_y * scale * 2))
     img.scale = scale
+    d = Draw(img)
     return img
 
-def draw_compiled(img, xyc_it):
+def draw_compiled(img, xyc_it, thickness=1):
     """Draws a sequence of x,y,color tuples onto an image.
 
     xyc_it: iterator of x,y,color tuples. The color of the first entry is
         discarded, all other colors are used as the respective line's color"""
     center_x, center_y = map(lambda n: n / 2, img.size)
-    d = Draw(img)
+    d = Draw(img, "RGBA")
     (x, y), _ = next(xyc_it)
     x, y = x * img.scale + center_x, y * img.scale + center_y
     for ((x2, y2), c) in xyc_it:
         x2, y2 = x2 * img.scale + center_x, y2 * img.scale + center_y
-        d.line((x, y, x2, y2), c)
+        d.line((x, y, x2, y2), c, width=thickness)
         x, y = x2, y2
 
 
-def colorize(xy):
-    xyl = list(xy) # the most inefficient step
-    l = len(xyl)
-    for (i, p) in enumerate(xyl):
-        yield (p, intermediate_color((i - 1) / (l - 2.0))) if i != 0 else (p, None)
+def colorize(xy, length=None, alpha=None):
+    if length == None:
+        # the most inefficient step
+        xy = list(xy)
+        length = len(xy)
+    for (i, p) in enumerate(xy):
+        yield (p, intermediate_color((i - 1) / (length - 2.0), alpha=alpha)) if i != 0 else (p, None)
 
 
 def gen_box(w=8, h=6, step=1, complete=True):
@@ -125,17 +129,18 @@ def gen_box(w=8, h=6, step=1, complete=True):
 
 # --- High-level stuff
 
-def gen_boxed_img_from_raw(seq, scale=80):
+def gen_boxed_img_from_raw(seq, scale=80, length=None, alpha=None):
     img = gen_img(scale=scale)
-    draw_compiled(img, colorize(compress_seq(seq)))
-    draw_compiled(img, izip(compress_seq(gen_box(200, 100, 5)), repeat((192,) * 3)))
-    draw_compiled(img, izip(compress_seq(gen_box(20, 10, 2)), repeat((128,) * 3)))
-    draw_compiled(img, izip(compress_seq(gen_box(2, 1)), repeat((64,) * 3)))
+    draw_compiled(img, colorize(compress_seq(seq), length=None, alpha=alpha))
+    draw_compiled(img, izip(compress_seq(gen_box(200, 100, 5)), repeat((192,) * 3 + (255,))), thickness=3)
+    draw_compiled(img, izip(compress_seq(gen_box(20, 10, 2)), repeat((128,) * 3 + (255,))), thickness=3)
+    draw_compiled(img, izip(compress_seq(gen_box(2, 1)), repeat((64,) * 3 + (255,))), thickness=3)
     return img
 
 
-def save_pi_img(n=3000, angle=None, name=None):
-    img = gen_boxed_img_from_raw(gen_walk_from_raw(take(n, gen_pi()), angle=angle))
+def save_pi_img(n=3000, angle=None, name=None, line_alpha=None):
+    walk = gen_walk_from_raw(take(n, gen_pi()), angle=angle)
+    img = gen_boxed_img_from_raw(walk, length=n, alpha=line_alpha)
     # Note that images will (often enough) be bitwise identical if run with the
     # same parameters, so overwriting is okay.
     name = name if name != None else \
