@@ -127,6 +127,32 @@ def gen_box(w=8, h=6, step=1, complete=True):
         zip(range(-w, step if complete else 0, step), repeat(-h))
 
 
+# Basing on https://en.wikipedia.org/wiki/Hilbert_curve#Representation_as_Lindenmayer_system
+def gen_hilbert_turtle(depth, mult=1):
+    if depth <= 0:
+        return []
+    # - B F + A F A + F B -
+    # + A F - B F B - F A +
+    sub_me = gen_hilbert_turtle(depth - 1, mult)
+    sub_op = gen_hilbert_turtle(depth - 1, mult * -1)
+    return [-mult] + sub_op + [0] + [+mult] + sub_me + \
+        [0] + sub_me + [+mult] + [0] + sub_op + [-mult]
+
+
+def gen_hilbert_walk(depth=4):
+    y = 2**(depth - 1) - 0.5
+    x = -y
+    xto, yto = 1, 0
+    yield (x,y)
+    for instr in gen_hilbert_turtle(depth):
+        if instr == 0:
+            x += xto
+            y += yto
+            yield (x,y)
+        else:
+            xto, yto = -yto * instr, xto * instr
+
+
 # --- High-level stuff
 
 def gen_boxed_img_from_raw(seq, scale=80, length=None, alpha=None):
