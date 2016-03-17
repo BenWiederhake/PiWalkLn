@@ -42,6 +42,10 @@ I don't know why you're interested, but it's a very simple idea:
   center of the image) is less-or-equal 1, then keep it.
 - If the distance is bigger, use `1 + ln d` instead.
 
+Here's what a [Hilbert Walk](https://en.wikipedia.org/wiki/Hilbert_curve) (which is great to visualize how a square gets distorted) looks like using this projection:
+![](/Hilbert_walk.png)
+
+
 ### What?
 
 Thanks for asking.
